@@ -212,18 +212,25 @@ export function UIOverlay() {
             </svg>
 
             {/* --- TOP RIGHT CLOSE CONTROLS --- */}
-            <div className="absolute top-12 right-24 z-30">
+            <div className="absolute top-12 right-32 z-30">
                 <button
                     ref={buttonRef}
-                    onClick={() => setView('ROOM')}
-                    className="
-                    className="absolute top-12 right-12 z-50 text-white hover:text-gray-300 transition-colors focus:outline-none"
+                    className="group relative focus:outline-none"
                     onClick={() => {
                         setView('ROOM')
                         setFocusedObject(null)
                     }}
                 >
-                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1">
+                    <div className="absolute inset-0 bg-[#D4AF37] blur-md opacity-40 group-hover:opacity-60 transition-opacity duration-300 rounded-full" />
+                    <svg
+                        width="40"
+                        height="40"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1"
+                        className="relative z-10 text-[#D4AF37] drop-shadow-[0_0_8px_rgba(212,175,55,0.8)] group-hover:text-[#F4CF57] group-hover:drop-shadow-[0_0_12px_rgba(212,175,55,1)] transition-all duration-300"
+                    >
                         <line x1="18" y1="6" x2="6" y2="18"></line>
                         <line x1="6" y1="6" x2="18" y2="18"></line>
                     </svg>

@@ -28,9 +28,14 @@ function InteractiveWatch({ asset, isFocused, setView, setFocusedObject, setAnch
             // Add manual rotation for 360 navigation
             // Fix: Add -PI/2 offset because the model faces +Z by default?
             // Visual check: Side view means we are 90 deg off. 
-            // Let's try subtracting 90 degrees to face Left (if it was facing Right).
-            ref.current.rotation.y = asset.rotation[1] - Math.PI / 2 + rotationRef.current.y
-            ref.current.rotation.x = (Math.PI / 2) + rotationRef.current.x // Vertical (90 deg), facing forward
+            // Match rotation to face the camera exactly
+            // Calculate angle from asset to camera
+            const dx = camera.position.x - asset.position[0]
+            const dz = camera.position.z - asset.position[2]
+            const angle = Math.atan2(dx, dz)
+
+            ref.current.rotation.y = angle + rotationRef.current.y
+            ref.current.rotation.x = (Math.PI / 2) + rotationRef.current.x
             ref.current.rotation.z = 0
 
             // --- ANCHOR PROJECTION ---
