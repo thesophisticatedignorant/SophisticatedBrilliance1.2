@@ -1,0 +1,19 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  background-color: #0a0a0a;
+  color: #ffffff;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  overflow: hidden; /* For full screen 3D */
+  font-family: 'Inter', sans-serif;
+}
+
+canvas {
+    touch-action: none;
+}
