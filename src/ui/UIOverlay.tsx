@@ -217,18 +217,13 @@ export function UIOverlay() {
                     ref={buttonRef}
                     onClick={() => setView('ROOM')}
                     className="
-                        pointer-events-auto opacity-0 translate-y-[20px]
-                        w-16 h-16 flex items-center justify-center
-                        border border-white/30 rounded-full
-                        text-white
-                        bg-black/20 backdrop-blur-sm
-                        hover:bg-white hover:text-black hover:border-white
-                        transition-all duration-500 ease-out
-                        group
-                    "
-                    aria-label="Back to Room"
+                    className="absolute top-12 right-12 z-50 text-white hover:text-gray-300 transition-colors focus:outline-none"
+                    onClick={() => {
+                        setView('ROOM')
+                        setFocusedObject(null)
+                    }}
                 >
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round">
+                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1">
                         <line x1="18" y1="6" x2="6" y2="18"></line>
                         <line x1="6" y1="6" x2="18" y2="18"></line>
                     </svg>
