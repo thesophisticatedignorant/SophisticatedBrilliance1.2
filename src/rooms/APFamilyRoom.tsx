@@ -28,7 +28,7 @@ function InteractiveWatch({ asset, isFocused, setView, setFocusedObject, setAnch
                 // When focused, stand upright (remove original X tilt) and face camera (keep original Y)
                 // Add manual rotation for 360 navigation
                 ref.current.rotation.y = asset.rotation[1] + rotationRef.current.y
-                ref.current.rotation.x = 0 + rotationRef.current.x // Start upright (0), not tilted
+                ref.current.rotation.x = (Math.PI / 2) + rotationRef.current.x // Vertical (90 deg), facing forward
                 ref.current.rotation.z = 0
 
                 // --- ANCHOR PROJECTION ---
