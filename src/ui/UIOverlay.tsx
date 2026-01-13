@@ -98,6 +98,28 @@ export function UIOverlay() {
         }
     }, [viewState, setView])
 
+    const anchorPositions = useStore((state) => state.anchorPositions)
+
+    // Refs for text line start points
+    const materialTextRef = useRef<HTMLDivElement>(null)
+    const dialTextRef = useRef<HTMLDivElement>(null)
+    const calibreTextRef = useRef<HTMLDivElement>(null)
+
+    // Utility to get center of an element
+    const getPos = (ref: React.RefObject<HTMLDivElement | null>) => {
+        if (!ref.current) return { x: 0, y: 0 }
+        const rect = ref.current.getBoundingClientRect()
+        return {
+            x: rect.left, // Start from left edge for right-aligned text? 
+            // The layout is "right-0 ... w-96 text-right". 
+            // So the text ends near the right edge, but the lines should probably start from the LEFT of the text block 
+            // or the bullets?
+            // The current design shows lines going from the text to the watch.
+            // Let's start from the left edge of the text container.
+            y: rect.top + rect.height / 2
+        }
+    }
+
     return (
         <div className="absolute top-0 left-0 w-full h-full pointer-events-none z-10 overflow-hidden font-serif">
 
@@ -118,15 +140,15 @@ export function UIOverlay() {
                     <h3 className="text-luxury-gold text-lg tracking-wide mb-6">Selfwinding</h3>
 
                     <div className="space-y-6 text-luxury-silver text-sm tracking-wider font-sans font-light">
-                        <div className="group relative">
+                        <div ref={materialTextRef} className="group relative">
                             <p className="uppercase text-xs text-gray-500 mb-1">Material</p>
                             <p className="text-white group-hover:text-luxury-gold transition-colors">18-carat Yellow Gold</p>
                         </div>
-                        <div className="group relative">
+                        <div ref={dialTextRef} className="group relative">
                             <p className="uppercase text-xs text-gray-500 mb-1">Dial</p>
                             <p className="text-white group-hover:text-luxury-gold transition-colors">Grande Tapisserie</p>
                         </div>
-                        <div className="group relative">
+                        <div ref={calibreTextRef} className="group relative">
                             <p className="uppercase text-xs text-gray-500 mb-1">Calibre</p>
                             <p className="text-white group-hover:text-luxury-gold transition-colors">4302</p>
                         </div>
@@ -136,29 +158,60 @@ export function UIOverlay() {
 
             {/* --- EVIDENCE LINES SVG --- */}
             <svg className="absolute top-0 left-0 w-full h-full pointer-events-none z-10 overflow-visible">
-                {/* Only visible in PRODUCT view. We can use fade transition logic or simple conditional rendering if wrapped in animated div. 
-                    Let's revert to simple conditional for the lines opacity controlled by parent or GSAP? 
-                    Actually, let's just render them and let GSAP opacity on a container handle it?
-                    The specsRef handles the text. The lines are separate.
-                    Let's just hardcode them visible for now effectively, but we need GSAP to animate them.
-                    For simplicity in this step, let's attach them to the same GSAP/CSS mechanism or just use opacity transition.
-                */}
-                <g className={`transition-opacity duration-1000 ${viewState === 'PRODUCT' ? 'opacity-100' : 'opacity-0'}`}>
-                    {/* Line 1: Material */}
-                    <line x1="80%" y1="58%" x2="52%" y2="50%" stroke="white" strokeWidth="1" strokeOpacity="0.5" />
-                    <circle cx="52%" cy="50%" r="3" fill="white" />
-
-                    {/* Line 2: Dial */}
-                    <line x1="80%" y1="68%" x2="50%" y2="50%" stroke="white" strokeWidth="1" strokeOpacity="0.5" />
-
-                    {/* Line 3: Calibre */}
-                    <line x1="80%" y1="78%" x2="48%" y2="55%" stroke="white" strokeWidth="1" strokeOpacity="0.5" />
-                    <circle cx="48%" cy="55%" r="3" fill="white" />
+                <g className={`transition-opacity duration-500 ${viewState === 'PRODUCT' ? 'opacity-100' : 'opacity-0'}`}>
+                    {viewState === 'PRODUCT' && (
+                        <>
+                            {/* Material Line */}
+                            {anchorPositions.material && materialTextRef.current && (
+                                <>
+                                    <line
+                                        x1={getPos(materialTextRef).x}
+                                        y1={getPos(materialTextRef).y}
+                                        x2={anchorPositions.material.x}
+                                        y2={anchorPositions.material.y}
+                                        stroke="white"
+                                        strokeWidth="1"
+                                        strokeOpacity="0.5"
+                                    />
+                                    <circle cx={anchorPositions.material.x} cy={anchorPositions.material.y} r="3" fill="white" />
+                                </>
+                            )}
+                            {/* Dial Line */}
+                            {anchorPositions.dial && dialTextRef.current && (
+                                <>
+                                    <line
+                                        x1={getPos(dialTextRef).x}
+                                        y1={getPos(dialTextRef).y}
+                                        x2={anchorPositions.dial.x}
+                                        y2={anchorPositions.dial.y}
+                                        stroke="white"
+                                        strokeWidth="1"
+                                        strokeOpacity="0.5"
+                                    />
+                                    {/* No circle for dial usually, covers face */}
+                                </>
+                            )}
+                            {/* Calibre Line */}
+                            {anchorPositions.calibre && calibreTextRef.current && (
+                                <>
+                                    <line
+                                        x1={getPos(calibreTextRef).x}
+                                        y1={getPos(calibreTextRef).y}
+                                        x2={anchorPositions.calibre.x}
+                                        y2={anchorPositions.calibre.y}
+                                        stroke="white"
+                                        strokeWidth="1"
+                                        strokeOpacity="0.5"
+                                    />
+                                    <circle cx={anchorPositions.calibre.x} cy={anchorPositions.calibre.y} r="3" fill="white" />
+                                </>
+                            )}
+                        </>
+                    )}
                 </g>
             </svg>
 
             {/* --- TOP RIGHT CLOSE CONTROLS --- */}
-            {/* Moved inward (right-24) and styled white */}
             <div className="absolute top-12 right-24 z-30">
                 <button
                     ref={buttonRef}
@@ -166,10 +219,10 @@ export function UIOverlay() {
                     className="
                         pointer-events-auto opacity-0 translate-y-[20px]
                         w-16 h-16 flex items-center justify-center
-                        border border-white rounded-full
+                        border border-white/30 rounded-full
                         text-white
-                        bg-transparent
-                        hover:scale-110 hover:bg-white hover:text-black
+                        bg-black/20 backdrop-blur-sm
+                        hover:bg-white hover:text-black hover:border-white
                         transition-all duration-500 ease-out
                         group
                     "

@@ -1,11 +1,24 @@
-import { useRef } from 'react'
+import { useRef, forwardRef, useImperativeHandle } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import '../materials/TapisserieMaterial'
 
-export function WatchModel(props: any) {
+export const WatchModel = forwardRef((props: any, ref) => {
     const materialRef = useRef<THREE.ShaderMaterial>(null)
     const bezelRef = useRef<THREE.Mesh>(null)
+
+    // Anchor Refs
+    const anchorMaterial = useRef<THREE.Group>(null)
+    const anchorDial = useRef<THREE.Group>(null)
+    const anchorCalibre = useRef<THREE.Group>(null)
+
+    useImperativeHandle(ref, () => ({
+        getAnchors: () => ({
+            material: anchorMaterial.current,
+            dial: anchorDial.current,
+            calibre: anchorCalibre.current
+        })
+    }))
 
     useFrame((state) => {
         if (materialRef.current) {
@@ -29,6 +42,14 @@ export function WatchModel(props: any) {
 
     return (
         <group {...props}>
+            {/* --- ANCHORS --- */}
+            {/* Material: On the case side/lug */}
+            <group ref={anchorMaterial} position={[1.5, 0, 0]} />
+            {/* Dial: Center of face */}
+            <group ref={anchorDial} position={[0, 0.4, 0.5]} />
+            {/* Calibre: Side/Movement */}
+            <group ref={anchorCalibre} position={[-1.2, 0, 0]} />
+
             {/* --- CASE --- */}
             {/* Main Body (Octagonal-ish via cylinder for now, ideally custom shape) */}
             <mesh position={[0, 0, 0]}>
@@ -93,4 +114,4 @@ export function WatchModel(props: any) {
             </mesh>
         </group>
     )
-}
+})

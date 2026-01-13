@@ -1,5 +1,5 @@
 import { useRef } from 'react'
-import { useFrame } from '@react-three/fiber'
+import { useFrame, useThree } from '@react-three/fiber'
 import { Text } from '@react-three/drei'
 import * as THREE from 'three'
 import { WatchModel } from '../components/WatchModel'
@@ -7,11 +7,13 @@ import { useStore } from '../store/useStore'
 import { easing } from 'maath'
 import { ASSETS } from '../config/assets'
 
-function InteractiveWatch({ asset, isFocused, setView, setFocusedObject }: any) {
+function InteractiveWatch({ asset, isFocused, setView, setFocusedObject, setAnchorPosition }: any) {
     const ref = useRef<THREE.Group>(null)
+    const modelRef = useRef<any>(null)
     const rotationRef = useRef({ x: 0, y: 0 })
     const isDragging = useRef(false)
     const lastPos = useRef({ x: 0, y: 0 })
+    const { camera, size } = useThree()
 
     useFrame((state, delta) => {
         if (ref.current) {
@@ -26,6 +28,27 @@ function InteractiveWatch({ asset, isFocused, setView, setFocusedObject }: any) 
                 // Apply manual rotation (Tumble)
                 ref.current.rotation.y = asset.rotation[1] + rotationRef.current.y
                 ref.current.rotation.x = asset.rotation[0] + rotationRef.current.x
+
+                // --- ANCHOR PROJECTION ---
+                if (modelRef.current) {
+                    const anchors = modelRef.current.getAnchors()
+                    if (anchors) {
+                        const projectAnchor = (obj: THREE.Object3D, key: string) => {
+                            if (!obj) return
+                            const v = new THREE.Vector3()
+                            obj.getWorldPosition(v)
+                            v.project(camera)
+                            const x = (v.x * 0.5 + 0.5) * size.width
+                            const y = (-(v.y * 0.5) + 0.5) * size.height
+                            setAnchorPosition(key, { x, y })
+                        }
+
+                        projectAnchor(anchors.material, 'material')
+                        projectAnchor(anchors.dial, 'dial')
+                        projectAnchor(anchors.calibre, 'calibre')
+                    }
+                }
+
             } else {
                 // Damp back to original rotation
                 easing.dampE(ref.current.rotation, asset.rotation, 0.5, delta)
@@ -77,7 +100,7 @@ function InteractiveWatch({ asset, isFocused, setView, setFocusedObject }: any) 
             onPointerOver={() => document.body.style.cursor = 'pointer'}
             onPointerOut={() => document.body.style.cursor = 'auto'}
         >
-            <WatchModel scale={0.5} />
+            <WatchModel ref={modelRef} scale={0.5} />
             <mesh
                 onPointerDown={handlePointerDown}
                 onPointerUp={handlePointerUp}
@@ -156,6 +179,7 @@ export function APFamilyRoom() {
                     isFocused={viewState === 'PRODUCT' && focusedObjectId === asset.id}
                     setView={setView}
                     setFocusedObject={setFocusedObject}
+                    setAnchorPosition={useStore((state) => state.setAnchorPosition)}
                 />
             ))}
 
