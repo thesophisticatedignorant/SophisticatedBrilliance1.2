@@ -24,96 +24,98 @@ function InteractiveWatch({ asset, isFocused, setView, setFocusedObject, setAnch
             easing.damp3(ref.current.position, [asset.position[0], targetY, asset.position[2]], 0.5, delta)
 
             // Rotation Logic
-            if (isFocused) {
-                // When focused, stand upright (remove original X tilt) and face camera (keep original Y)
-                // Add manual rotation for 360 navigation
-                ref.current.rotation.y = asset.rotation[1] + rotationRef.current.y
-                ref.current.rotation.x = (Math.PI / 2) + rotationRef.current.x // Vertical (90 deg), facing forward
-                ref.current.rotation.z = 0
+            // When focused, stand upright (remove original X tilt) and face camera (keep original Y)
+            // Add manual rotation for 360 navigation
+            // Fix: Add -PI/2 offset because the model faces +Z by default?
+            // Visual check: Side view means we are 90 deg off. 
+            // Let's try subtracting 90 degrees to face Left (if it was facing Right).
+            ref.current.rotation.y = asset.rotation[1] - Math.PI / 2 + rotationRef.current.y
+            ref.current.rotation.x = (Math.PI / 2) + rotationRef.current.x // Vertical (90 deg), facing forward
+            ref.current.rotation.z = 0
 
-                // --- ANCHOR PROJECTION ---
-                if (modelRef.current) {
-                    const anchors = modelRef.current.getAnchors()
-                    if (anchors) {
-                        const projectAnchor = (obj: THREE.Object3D, key: string) => {
-                            if (!obj) return
-                            const v = new THREE.Vector3()
-                            obj.getWorldPosition(v)
-                            v.project(camera)
-                            const x = (v.x * 0.5 + 0.5) * size.width
-                            const y = (-(v.y * 0.5) + 0.5) * size.height
-                            setAnchorPosition(key, { x, y })
-                        }
-
-                        projectAnchor(anchors.material, 'material')
-                        projectAnchor(anchors.dial, 'dial')
-                        projectAnchor(anchors.calibre, 'calibre')
+            // --- ANCHOR PROJECTION ---
+            if (modelRef.current) {
+                const anchors = modelRef.current.getAnchors()
+                if (anchors) {
+                    const projectAnchor = (obj: THREE.Object3D, key: string) => {
+                        if (!obj) return
+                        const v = new THREE.Vector3()
+                        obj.getWorldPosition(v)
+                        v.project(camera)
+                        const x = (v.x * 0.5 + 0.5) * size.width
+                        const y = (-(v.y * 0.5) + 0.5) * size.height
+                        setAnchorPosition(key, { x, y })
                     }
-                }
 
-            } else {
-                // Damp back to original rotation
-                easing.dampE(ref.current.rotation, asset.rotation, 0.5, delta)
-                // Reset rotation accumulator
-                rotationRef.current = { x: 0, y: 0 }
+                    projectAnchor(anchors.material, 'material')
+                    projectAnchor(anchors.dial, 'dial')
+                    projectAnchor(anchors.calibre, 'calibre')
+                }
             }
+
+        } else {
+            // Damp back to original rotation
+            easing.dampE(ref.current.rotation, asset.rotation, 0.5, delta)
+            // Reset rotation accumulator
+            rotationRef.current = { x: 0, y: 0 }
         }
+    }
     })
 
-    const handlePointerDown = (e: any) => {
-        if (!isFocused) return
+const handlePointerDown = (e: any) => {
+    if (!isFocused) return
+    e.stopPropagation()
+    isDragging.current = true
+    lastPos.current = { x: e.screenX, y: e.screenY }
+    // Capture pointer to track outside the mesh
+    e.target.setPointerCapture(e.pointerId)
+}
+
+const handlePointerUp = (e: any) => {
+    if (!isFocused) return
+    e.stopPropagation()
+    isDragging.current = false
+    e.target.releasePointerCapture(e.pointerId)
+}
+
+const handlePointerMove = (e: any) => {
+    if (isFocused && isDragging.current) {
         e.stopPropagation()
-        isDragging.current = true
+        const dx = e.screenX - lastPos.current.x
+        const dy = e.screenY - lastPos.current.y
+
+        rotationRef.current.y += dx * 0.005
+        rotationRef.current.x += dy * 0.005
+
         lastPos.current = { x: e.screenX, y: e.screenY }
-        // Capture pointer to track outside the mesh
-        e.target.setPointerCapture(e.pointerId)
     }
+}
 
-    const handlePointerUp = (e: any) => {
-        if (!isFocused) return
-        e.stopPropagation()
-        isDragging.current = false
-        e.target.releasePointerCapture(e.pointerId)
-    }
-
-    const handlePointerMove = (e: any) => {
-        if (isFocused && isDragging.current) {
+return (
+    <group
+        ref={ref}
+        position={asset.position}
+        rotation={asset.rotation}
+        onClick={(e) => {
             e.stopPropagation()
-            const dx = e.screenX - lastPos.current.x
-            const dy = e.screenY - lastPos.current.y
-
-            rotationRef.current.y += dx * 0.005
-            rotationRef.current.x += dy * 0.005
-
-            lastPos.current = { x: e.screenX, y: e.screenY }
-        }
-    }
-
-    return (
-        <group
-            ref={ref}
-            position={asset.position}
-            rotation={asset.rotation}
-            onClick={(e) => {
-                e.stopPropagation()
-                setFocusedObject(asset.id)
-                setView('PRODUCT')
-            }}
-            onPointerOver={() => document.body.style.cursor = 'pointer'}
-            onPointerOut={() => document.body.style.cursor = 'auto'}
+            setFocusedObject(asset.id)
+            setView('PRODUCT')
+        }}
+        onPointerOver={() => document.body.style.cursor = 'pointer'}
+        onPointerOut={() => document.body.style.cursor = 'auto'}
+    >
+        <WatchModel ref={modelRef} scale={0.5} />
+        <mesh
+            onPointerDown={handlePointerDown}
+            onPointerUp={handlePointerUp}
+            onPointerMove={handlePointerMove}
         >
-            <WatchModel ref={modelRef} scale={0.5} />
-            <mesh
-                onPointerDown={handlePointerDown}
-                onPointerUp={handlePointerUp}
-                onPointerMove={handlePointerMove}
-            >
-                <boxGeometry args={[2, 2, 2]} />
-                <meshBasicMaterial transparent opacity={0} />
-            </mesh>
-            {/* Label attached to the asset? Or floating above? */}
-        </group>
-    )
+            <boxGeometry args={[2, 2, 2]} />
+            <meshBasicMaterial transparent opacity={0} />
+        </mesh>
+        {/* Label attached to the asset? Or floating above? */}
+    </group>
+)
 }
 
 export function APFamilyRoom() {
@@ -121,6 +123,7 @@ export function APFamilyRoom() {
     const viewState = useStore((state) => state.viewState)
     const focusedObjectId = useStore((state) => state.focusedObjectId)
     const setFocusedObject = useStore((state) => state.setFocusedObject)
+    const setAnchorPosition = useStore((state) => state.setAnchorPosition)
 
     const marbleMaterial = new THREE.MeshStandardMaterial({
         color: "#ffffff",
@@ -181,7 +184,7 @@ export function APFamilyRoom() {
                     isFocused={viewState === 'PRODUCT' && focusedObjectId === asset.id}
                     setView={setView}
                     setFocusedObject={setFocusedObject}
-                    setAnchorPosition={useStore((state) => state.setAnchorPosition)}
+                    setAnchorPosition={setAnchorPosition}
                 />
             ))}
 
