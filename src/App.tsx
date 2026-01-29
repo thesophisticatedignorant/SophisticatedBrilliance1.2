@@ -1,7 +1,6 @@
 import { SceneController } from './engine/SceneController'
 import { APFamilyRoom } from './rooms/APFamilyRoom'
 import { UIOverlay } from './ui/UIOverlay'
-import { ScrollNavigation } from './engine/ScrollNavigation'
 import { useStore } from './store/useStore'
 import './index.css'
 

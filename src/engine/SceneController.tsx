@@ -1,6 +1,5 @@
 import { Canvas } from '@react-three/fiber'
 import { Suspense } from 'react'
-import { Environment, Sparkles } from '@react-three/drei'
 import { EffectComposer, Bloom, Noise, Vignette } from '@react-three/postprocessing'
 
 import { CameraRig } from './CameraRig'
@@ -20,36 +19,7 @@ export function SceneController({ children }: SceneControllerProps) {
             <Canvas shadows dpr={[1, 2]} gl={{ antialias: true, preserveDrawingBuffer: true }}>
                 <CameraRig />
 
-                {/* Global Lighting - Cinematic Setup */}
-                <ambientLight intensity={0.3} color="#ffffff" />
-                <spotLight
-                    position={[10, 10, 10]}
-                    angle={0.15}
-                    penumbra={1}
-                    intensity={2}
-                    castShadow
-                    shadow-bias={-0.0001}
-                />
-                <rectAreaLight
-                    width={20}
-                    height={20}
-                    position={[-10, 10, -10]}
-                    color="#D4AF37"
-                    intensity={1}
-                    onUpdate={(self) => self.lookAt(0, 0, 0)}
-                />
-
-                <Environment preset="city" blur={1} />
-
-                {/* Atmosphere - Golden Dust */}
-                <Sparkles
-                    count={80}
-                    scale={12}
-                    size={3}
-                    speed={0.2}
-                    opacity={0.6}
-                    color="#D4AF37"
-                />
+                {/* Global Lighting removed to allow Room-specific control */}
 
                 <Suspense fallback={null}>
                     {children}

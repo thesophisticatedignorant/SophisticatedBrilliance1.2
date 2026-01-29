@@ -3,6 +3,27 @@ import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import '../materials/TapisserieMaterial'
 
+const goldMaterial = new THREE.MeshStandardMaterial({
+    color: "#E5C885", // Champagne gold
+    roughness: 0.15,
+    metalness: 1.0,
+    envMapIntensity: 2.5,
+})
+
+const steelMaterial = new THREE.MeshStandardMaterial({
+    color: "#d1d5db",
+    roughness: 0.2,
+    metalness: 0.9,
+    envMapIntensity: 1.5,
+})
+
+const handMaterial = new THREE.MeshStandardMaterial({
+    color: "#E5C885",
+    metalness: 1,
+    roughness: 0.1,
+    envMapIntensity: 2
+})
+
 export const WatchModel = forwardRef((props: any, ref) => {
     const materialRef = useRef<THREE.ShaderMaterial>(null)
     const bezelRef = useRef<THREE.Mesh>(null)
@@ -23,48 +44,29 @@ export const WatchModel = forwardRef((props: any, ref) => {
     useFrame((state) => {
         if (materialRef.current) {
             materialRef.current.uniforms.uTime.value = state.clock.getElapsedTime()
-            // Subtle light movement effect
         }
-    })
-
-    const goldMaterial = new THREE.MeshStandardMaterial({
-        color: "#E5C885", // Champagne gold
-        roughness: 0.2,
-        metalness: 1.0,
-        envMapIntensity: 2,
-    })
-
-    const steelMaterial = new THREE.MeshStandardMaterial({
-        color: "#C0C0C0",
-        roughness: 0.3,
-        metalness: 0.9,
     })
 
     return (
         <group {...props}>
             {/* --- ANCHORS --- */}
-            {/* Material: On the case side/lug */}
             <group ref={anchorMaterial} position={[1.5, 0, 0]} />
-            {/* Dial: Center of face */}
             <group ref={anchorDial} position={[0, 0.4, 0.5]} />
-            {/* Calibre: Side/Movement */}
             <group ref={anchorCalibre} position={[-1.2, 0, 0]} />
 
             {/* --- CASE --- */}
-            {/* Main Body (Octagonal-ish via cylinder for now, ideally custom shape) */}
             <mesh position={[0, 0, 0]}>
                 <cylinderGeometry args={[1.6, 1.6, 0.4, 8]} />
                 <primitive object={goldMaterial} />
             </mesh>
 
-            {/* Bezel (The Iconic Octagon) */}
+            {/* Bezel */}
             <mesh ref={bezelRef} position={[0, 0.25, 0]} rotation={[0, Math.PI / 8, 0]}>
-                {/* 8-sided cylinder (octagon) */}
                 <cylinderGeometry args={[1.5, 1.5, 0.1, 8]} />
                 <primitive object={goldMaterial} />
             </mesh>
 
-            {/* Bezel Screws (8 Hexagonal screws) */}
+            {/* Bezel Screws */}
             {[...Array(8)].map((_, i) => {
                 const angle = (i / 8) * Math.PI * 2 + (Math.PI / 8)
                 const r = 1.3
@@ -82,25 +84,23 @@ export const WatchModel = forwardRef((props: any, ref) => {
                 <tapisserieMaterial
                     ref={materialRef}
                     transparent
-                    uColor={new THREE.Color('#0f2045')} // Dark Blue
-                    uHighlight={new THREE.Color('#1E3F7D')} // Lighter Blue
+                    uColor={new THREE.Color('#0f2045')}
+                    uHighlight={new THREE.Color('#1E3F7D')}
                     uGridSize={40.0}
                 />
             </mesh>
 
             {/* --- HANDS --- */}
-            {/* Hour */}
             <mesh position={[0, 0.35, 0]} rotation={[0, Math.PI / 4, 0]}>
                 <boxGeometry args={[0.1, 0.02, 0.8]} />
-                <meshStandardMaterial color="#E5C885" metalness={1} roughness={0.1} />
+                <primitive object={handMaterial} />
             </mesh>
-            {/* Minute */}
             <mesh position={[0, 0.38, 0]} rotation={[0, -Math.PI / 2, 0]}>
                 <boxGeometry args={[0.08, 0.02, 1.1]} />
-                <meshStandardMaterial color="#E5C885" metalness={1} roughness={0.1} />
+                <primitive object={handMaterial} />
             </mesh>
 
-            {/* Glass (Crystal) */}
+            {/* Glass */}
             <mesh position={[0, 0.4, 0]}>
                 <cylinderGeometry args={[1.4, 1.4, 0.05, 32]} />
                 <meshPhysicalMaterial
