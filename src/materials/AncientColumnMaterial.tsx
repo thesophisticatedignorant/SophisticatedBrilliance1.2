@@ -11,7 +11,7 @@ const AncientColumnShaderMaterial = shaderMaterial(
         uFluteFrequency: 20.0,
         uFluteDepth: 0.02,
         uDecayScale: 2.5,
-        uDecayThreshold: 0.45, // How much is eroded
+        uDecayThreshold: 1.0, // How much is eroded
     },
     // Vertex Shader
     `
@@ -51,7 +51,7 @@ const AncientColumnShaderMaterial = shaderMaterial(
         //   x3 = x0 - 1.0 + 3.0 * C.xxx;
         vec3 x1 = x0 - i1 + C.xxx;
         vec3 x2 = x0 - i2 + C.yyy; // 2.0*C.x = 1/3 = C.y
-        vec3 x3 = x0 - 1.0 + C.zzz; // 3.0*C.x = 1/2 = C.z
+        vec3 x3 = x0 - 1.0 + vec3(0.5); // Fixed C.zzz (C is vec2)
 
         // Permutations
         i = mod289v3(i); 
@@ -146,9 +146,10 @@ const AncientColumnShaderMaterial = shaderMaterial(
 
         // --- Decay Check ---
         // If really decayed, discard to make a hole
-        if (vDecayValue > uDecayThreshold + 0.15) {
-             discard;
-        } 
+        // If really decayed, blend to sand color but don't discard to ensure visibility
+        // if (vDecayValue > uDecayThreshold + 0.15) {
+        //      discard;
+        // } 
         
         // Apply shallow decay color edge
         float decayMix = smoothstep(uDecayThreshold - 0.1, uDecayThreshold + 0.15, vDecayValue);

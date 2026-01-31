@@ -1,11 +1,13 @@
-import { useEffect, useRef } from 'react'
+import { useRef } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
-import { Text, Cloud } from '@react-three/drei'
+import { Text } from '@react-three/drei'
 import * as THREE from 'three'
 import { WatchModel } from '../components/WatchModel'
 import { useStore } from '../store/useStore'
 import { easing } from 'maath'
 import { ASSETS } from '../config/assets'
+import { DesertLandscape } from '../environment/DesertLandscape'
+import { AncientColumnMaterial } from '../materials/AncientColumnMaterial'
 
 
 
@@ -131,45 +133,9 @@ function InteractiveWatch({ asset, isFocused, setView, setFocusedObject, setAnch
     )
 }
 
-function Spotlight({ targetPosition, visible }: { targetPosition: [number, number, number], visible: boolean }) {
-    const light = useRef<THREE.SpotLight>(null)
-    const targetRef = useRef(new THREE.Object3D())
-    const target = targetRef.current
 
-    useFrame((_, delta) => {
-        if (!light.current) return
-        const targetIntensity = visible ? 5 : 0
-        using: easing.damp(light.current, 'intensity', targetIntensity, 0.2, delta)
-        target.position.set(...targetPosition)
-    })
 
-    return (
-        <group>
-            <primitive object={target} />
-            <spotLight
-                ref={light}
-                position={[targetPosition[0], 10, targetPosition[2]]}
-                angle={0.15}
-                penumbra={1}
-                distance={15}
-                castShadow
-                intensity={0}
-                color="#fff"
-                target={target}
-            />
-            {/* God Ray / Volumetric cone simulation */}
-            {visible && (
-                <mesh position={[targetPosition[0], 5, targetPosition[2]]} rotation={[0, 0, 0]}>
-                    <cylinderGeometry args={[0.01, 1.5, 10, 32]} />
-                    <meshBasicMaterial transparent opacity={0.05} color="#fff" side={THREE.DoubleSide} />
-                </mesh>
-            )}
-        </group>
-    )
-}
 
-import { AncientColumnMaterial } from '../materials/AncientColumnMaterial'
-import { DesertSandMaterial } from '../materials/DesertSandMaterial'
 
 
 // Palette moved inline or to config if needed in future
@@ -181,110 +147,51 @@ export function APFamilyRoom() {
     const setFocusedObject = useStore((state) => state.setFocusedObject)
     const setAnchorPosition = useStore((state) => state.setAnchorPosition)
 
-    const focusedAsset = ASSETS.find(a => a.id === focusedObjectId)
-    const spotlightPos: [number, number, number] = focusedAsset ? [focusedAsset.position[0], 3.5, focusedAsset.position[2]] : [0, 0, 0]
 
-    const { scene } = useThree()
-
-    useEffect(() => {
-        const oldBg = scene.background
-        const oldFog = scene.fog
-
-        scene.background = new THREE.Color('#e6c288')
-        scene.fog = new THREE.Fog('#e6c288', 20, 150)
-
-        return () => {
-            scene.background = oldBg
-            scene.fog = oldFog
-        }
-    }, [scene])
 
     return (
         <group>
-            {/* Dramatic Sahara Day Environment */}
-            {/* Background handled in useEffect to ensure scene attachment */}
-
-            {/* Bright Ambient fill */}
-            <ambientLight intensity={0.6} color="#ffeebb" />
-
-            {/* Visible Sun Mesh */}
-            <mesh position={[-50, 40, -80]}>
-                <sphereGeometry args={[8, 32, 32]} />
-                <meshBasicMaterial color="#fffacd" />
-            </mesh>
-
-            {/* Clouds - lighter and fluffier */}
-            <group position={[0, 30, -50]}>
-                <Cloud opacity={0.6} speed={0.2} segments={20} bounds={[60, 10, 60]} position={[-20, 0, 0]} color="#fff" />
-                <Cloud opacity={0.5} speed={0.2} segments={20} bounds={[50, 8, 50]} position={[20, 5, -10]} color="#fff" />
-            </group>
-
-            {/* Sharp Sunlight for Dunes */}
-            <directionalLight
-                position={[-50, 50, -80]} // Higher sun for sharper shadows
-                intensity={4.0}
-                castShadow
-                color="#fff5cc"
-                shadow-bias={-0.0001}
-                shadow-mapSize={[2048, 2048]}
-            >
-                <orthographicCamera attach="shadow-camera" args={[-80, 80, 80, -80]} near={1} far={300} />
-            </directionalLight>
-
-            <Spotlight targetPosition={spotlightPos} visible={viewState === 'PRODUCT'} />
-
-            {/* Procedural Dunes - Increase segments for sharpness */}
-            {/* 512x512 segments for high fidelity ridge displacement */}
-            <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -5, 0]} receiveShadow>
-                <planeGeometry args={[1000, 1000, 512, 512]} />
-                <DesertSandMaterial
-                    sunPosition={[-50, 50, -80]}
-                    COLORS={{
-                        shadow: '#b88a57',
-                        mid: '#E0C090',
-                        highlight: '#FFD700'
-                    }}
-                    displacementStrength={25.0}
-                    noiseScale={1.5}
-                    macroHeight={40.0}
-                    macroScale={0.04}
-                />
-            </mesh>
-
-            {/* Background Sandstone Mountains */}
-            <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -10, -200]} receiveShadow>
-                <planeGeometry args={[500, 150, 256, 256]} />
-                <DesertSandMaterial
-                    sunPosition={[-50, 50, -80]}
-                    COLORS={{
-                        shadow: '#b88a57',
-                        mid: '#E0C090',
-                        highlight: '#FFD700'
-                    }}
-                    displacementStrength={30.0}
-                    noiseScale={2.5}
-                    macroHeight={60.0}
-                    macroScale={0.05}
-                />
-            </mesh>
+            <DesertLandscape />
 
             {/* Floating Columns & Assets */}
-            {ASSETS.map((asset, i) => {
-                const isCenter = asset.id === 'center-watch'
+            {/* ANCIENT ROMAN PLATFORM */}
+            <group position={[0, -0.2, 0]}>
+                {/* Main Base */}
+                <mesh receiveShadow castShadow position={[0, 0.2, 0]}>
+                    <cylinderGeometry args={[8, 9, 0.6, 64]} />
+                    <AncientColumnMaterial uColor={new THREE.Color("#dccca3")} uDecayThreshold={0.6} uDecayScale={10.0} />
+                </mesh>
+                {/* Upper Tier */}
+                <mesh receiveShadow castShadow position={[0, 0.6, 0]}>
+                    <cylinderGeometry args={[6, 6.5, 0.4, 64]} />
+                    <AncientColumnMaterial uColor={new THREE.Color("#e0d0b0")} uDecayThreshold={0.7} />
+                </mesh>
+            </group>
+
+            {/* Floating Columns & Assets */}
+            {ASSETS.map((asset) => {
+                const isCenter = asset.id === 'center-watch';
+                const colHeight = isCenter ? 3.0 : 3.8;
+                const colRadius = isCenter ? 0.8 : 0.5;
+                const colY = isCenter ? 2.0 : 1.5; // Roughly buried
 
                 return (
                     <group key={asset.id}>
-                        {/* The Column Platform */}
-                        <group position={[asset.position[0], asset.position[1] - 2.5, asset.position[2]]}
-                            rotation={[
-                                isCenter ? 0.2 : (Math.PI / 4) + Math.sin(i * 123.4) * 0.5,
-                                isCenter ? 0.1 : (Math.PI / 3) + Math.cos(i * 567.8) * 0.5,
-                                isCenter ? 0.1 : (Math.PI / 6) + Math.sin(i * 910.1) * 0.3
-                            ]}
-                        >
-                            <mesh receiveShadow castShadow rotation={[0, Math.PI / 4, 0]}>
-                                <cylinderGeometry args={[1.8, 1.8, 1.2, 8]} /> {/* Flatted "drum" shape */}
-                                <AncientColumnMaterial uColor={new THREE.Color("#ffffff")} />
+                        {/* The Ruined Column */}
+                        <group position={[asset.position[0], colY, asset.position[2]]}>
+                            <mesh receiveShadow castShadow position={[0, 0, 0]}>
+                                <cylinderGeometry args={[colRadius * 0.9, colRadius, colHeight, 32]} />
+                                <AncientColumnMaterial
+                                    uColor={new THREE.Color("#e6dcb4")}
+                                    uDecayThreshold={0.75}
+                                    uDecayScale={3.0}
+                                    uFluteFrequency={isCenter ? 30.0 : 20.0}
+                                />
+                            </mesh>
+                            {/* Weathered Capital */}
+                            <mesh position={[0, colHeight / 2, 0]} receiveShadow castShadow>
+                                <cylinderGeometry args={[colRadius * 1.2, colRadius * 0.9, 0.3, 32]} />
+                                <AncientColumnMaterial uColor={new THREE.Color("#d4c8a8")} uDecayThreshold={0.5} />
                             </mesh>
                         </group>
 
@@ -297,7 +204,8 @@ export function APFamilyRoom() {
                         />
                     </group>
                 )
-            })}
+            })
+            }
 
             {/* Typography */}
             <group position={[-15, 12, -20]} rotation={[0, 0.2, 0]}>
@@ -327,6 +235,6 @@ export function APFamilyRoom() {
                     HOUSE OF WONDERS
                 </Text>
             </group>
-        </group>
+        </group >
     )
 }
