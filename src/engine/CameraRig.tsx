@@ -58,13 +58,13 @@ export function CameraRig() {
 
     return (
         <>
-            <PerspectiveCamera makeDefault position={[0, 8, 30]} fov={45} />
+            <PerspectiveCamera makeDefault position={[0, 15, 45]} fov={50} />
             <OrbitControls
                 ref={controlsRef}
                 enablePan={false}
                 enableRotate={true}
                 minDistance={1}
-                maxDistance={15}
+                maxDistance={60}
                 enableDamping={true}
                 dampingFactor={0.05}
             />

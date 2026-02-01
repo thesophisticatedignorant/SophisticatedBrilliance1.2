@@ -154,17 +154,43 @@ export function APFamilyRoom() {
             <DesertLandscape />
 
             {/* Floating Columns & Assets */}
-            {/* ANCIENT ROMAN PLATFORM */}
+            {/* RESTORED PLINTH - Replaces Ancient Roman Platform */}
             <group position={[0, -0.2, 0]}>
-                {/* Main Base */}
-                <mesh receiveShadow castShadow position={[0, 0.2, 0]}>
-                    <cylinderGeometry args={[8, 9, 0.6, 64]} />
-                    <AncientColumnMaterial uColor={new THREE.Color("#dccca3")} uDecayThreshold={0.6} uDecayScale={10.0} />
+                {/* Base Cylinder (Smooth, clean limestone) */}
+                <mesh receiveShadow castShadow position={[0, 0.25, 0]}>
+                    <cylinderGeometry args={[8, 8.2, 0.5, 128, 1]} />
+                    <AncientColumnMaterial
+                        uColor={new THREE.Color("#dccca3")}
+                        uErosionStrength={0.2} // Low erosion = Preserved
+                        fluteFreq={0.0} // No flutes
+                        uEntasisStrength={0.05} // Subtle swelling
+                    />
                 </mesh>
-                {/* Upper Tier */}
+
+                {/* Main Plinth Surface */}
                 <mesh receiveShadow castShadow position={[0, 0.6, 0]}>
-                    <cylinderGeometry args={[6, 6.5, 0.4, 64]} />
-                    <AncientColumnMaterial uColor={new THREE.Color("#e0d0b0")} uDecayThreshold={0.7} />
+                    <cylinderGeometry args={[7.8, 7.8, 0.2, 128, 1]} />
+                    <AncientColumnMaterial
+                        uColor={new THREE.Color("#e0d0b0")}
+                        uErosionStrength={0.1} // Very preserved
+                        fluteFreq={0.0}
+                    />
+                </mesh>
+
+                {/* Carved Ring Detail (Darker inset look) */}
+                <mesh position={[0, 0.71, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+                    <ringGeometry args={[6.0, 6.3, 128]} />
+                    <AncientColumnMaterial
+                        uColor={new THREE.Color("#b8aa8a")}
+                        uErosionStrength={0.1}
+                        uDecayColor={new THREE.Color("#8f846a")}
+                    />
+                </mesh>
+
+                {/* Sand Drift - Partial Encirclement */}
+                <mesh position={[1.0, -0.1, 1.0]} rotation={[-Math.PI / 2, 0, -Math.PI / 4]} scale={[1, 1, 0.3]} receiveShadow>
+                    <torusGeometry args={[9.0, 2.5, 16, 64, 3.5]} />
+                    <meshStandardMaterial color="#e6a65c" roughness={1.0} />
                 </mesh>
             </group>
 
@@ -180,7 +206,7 @@ export function APFamilyRoom() {
                         {/* The Ruined Column */}
                         <group position={[asset.position[0], colY, asset.position[2]]}>
                             <mesh receiveShadow castShadow position={[0, 0, 0]}>
-                                <cylinderGeometry args={[colRadius * 0.9, colRadius, colHeight, 32]} />
+                                <cylinderGeometry args={[colRadius * 0.9, colRadius, colHeight, 128, 64]} />
                                 <AncientColumnMaterial
                                     uColor={new THREE.Color("#e6dcb4")}
                                     uDecayThreshold={0.75}
@@ -190,7 +216,7 @@ export function APFamilyRoom() {
                             </mesh>
                             {/* Weathered Capital */}
                             <mesh position={[0, colHeight / 2, 0]} receiveShadow castShadow>
-                                <cylinderGeometry args={[colRadius * 1.2, colRadius * 0.9, 0.3, 32]} />
+                                <cylinderGeometry args={[colRadius * 1.2, colRadius * 0.9, 0.3, 128, 10]} />
                                 <AncientColumnMaterial uColor={new THREE.Color("#d4c8a8")} uDecayThreshold={0.5} />
                             </mesh>
                         </group>
