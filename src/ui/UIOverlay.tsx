@@ -35,34 +35,21 @@ export function UIOverlay() {
                     duration: 0.4,
                     pointerEvents: 'none'
                 }, "<")
-                .to([titleRef.current, subtitleRef.current], {
-                    opacity: 1,
-                    y: 0,
-                    duration: 1.0,
-                    stagger: 0.1,
-                    ease: 'power3.out',
-                    pointerEvents: 'auto'
-                }, "-=0.2")
+            // Title/Subtitle animations removed to keep them static
 
         } else if (viewState === 'PRODUCT') {
-            tl.to([titleRef.current, subtitleRef.current], {
-                opacity: 0,
-                y: -50,
-                duration: 0.6,
-                ease: 'power3.in',
-                pointerEvents: 'none'
-            })
-                .fromTo([specsRef.current, narrativeRef.current, macroButtonRef.current],
-                    { opacity: 0, x: (i) => i === 0 ? 50 : -50 },
-                    {
-                        opacity: 1,
-                        x: 0,
-                        duration: 0.8,
-                        stagger: 0.2,
-                        ease: 'power3.out',
-                        pointerEvents: 'auto'
-                    }
-                )
+            // Title/Subtitle animations removed to keep them static
+            tl.fromTo([specsRef.current, narrativeRef.current, macroButtonRef.current],
+                { opacity: 0, x: (i) => i === 0 ? 50 : -50 },
+                {
+                    opacity: 1,
+                    x: 0,
+                    duration: 0.8,
+                    stagger: 0.2,
+                    ease: 'power3.out',
+                    pointerEvents: 'auto'
+                }
+            )
                 .fromTo(buttonRef.current,
                     { opacity: 0, y: 20 },
                     {
@@ -117,11 +104,11 @@ export function UIOverlay() {
         <div className="absolute top-0 left-0 w-full h-full pointer-events-none z-10 overflow-hidden font-serif">
 
             {/* --- TOP LEFT BRANDING --- */}
-            <div className="absolute top-0 left-0 p-12">
-                <h1 ref={titleRef} className="text-5xl text-luxury-gold tracking-[0.2em] uppercase drop-shadow-lg transform translate-y-0 opacity-100">
+            <div className="absolute top-0 left-0 p-12 opacity-60"> {/* Reduced container severity/opacity */}
+                <h1 ref={titleRef} className="text-4xl text-luxury-gold tracking-[0.2em] uppercase drop-shadow-lg opacity-80">
                     Transcendence of Man
                 </h1>
-                <p ref={subtitleRef} className="text-sm text-luxury-silver mt-3 tracking-[0.4em] uppercase drop-shadow-md transform translate-y-0 opacity-100 pl-1">
+                <p ref={subtitleRef} className="text-xs text-luxury-silver mt-2 tracking-[0.4em] uppercase drop-shadow-md opacity-60 pl-1">
                     House of Wonders
                 </p>
             </div>

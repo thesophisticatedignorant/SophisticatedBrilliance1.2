@@ -1,8 +1,8 @@
 export function getDuneHeight(x: number, z: number) {
     // 1. Platform Flattening (Central Sanctuary)
     const dist = Math.sqrt(x * x + z * z);
-    const platformRadius = 25.0;
-    const blendRadius = 70.0;
+    const platformRadius = 45.0; // Increased from 25.0 to push dunes back
+    const blendRadius = 120.0;   // Increased from 70.0 for smoother transition
 
     let blend = 1.0;
     if (dist < blendRadius) {

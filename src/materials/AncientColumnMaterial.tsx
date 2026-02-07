@@ -54,7 +54,7 @@ const AncientColumnShaderMaterial = shaderMaterial(
 
         vec3 x1 = x0 - i1 + C.xxx;
         vec3 x2 = x0 - i2 + C.yyy;
-        vec3 x3 = x0 - 1.0 + C.yyy; // Fixed C.zzz (C is vec2) // correction 
+        vec3 x3 = x0 - 1.0 + C.yyy; 
 
         // Permutations
         i = mod289(i); 
@@ -108,40 +108,42 @@ const AncientColumnShaderMaterial = shaderMaterial(
         vHeight = uv.y; // 0 at bottom, 1 at top
 
         // --- 1. Entasis (Classical Swelling) ---
-        // Profile curve: sin(uv.y * PI) * strength
-        // Only apply to XZ plane (radius), leave Y alone
         float swelling = sin(uv.y * 3.14159) * uEntasisStrength;
-        
-        // Don't swell the top and bottom caps too much if we want them flat-ish, 
-        // but classical Entasis is subtle curve. 
-        // We act as if position.xz is the radius.
-        // Check if side vertex (normal.y is small)
         float isSide = smoothstep(0.9, 0.5, abs(normal.y));
         pos.xz += normalize(pos.xz) * swelling * isSide;
 
 
         // --- 2. Flutes (Vertical Grooves) ---
-        // Basic fluting logic
         float flute = -cos(uv.x * uFluteFrequency * 6.28318);
         flute = flute * 0.5 + 0.5;
         
-        // Deepen flutes, but soften by noise. Reduce noise influence if restored.
         vec4 worldPos = modelMatrix * vec4(pos, 1.0);
-        float noise = snoise(worldPos.xyz * 10.0) * uErosionStrength; 
         
-        // Apply flute displacement
-        // Fade out flutes near top and bottom (uv.y) for "unfinished" or eroded look
+        // --- 3. HARD CHIPPED EROSION ---
+        // High frequency noise for "chips"
+        float chipNoise = snoise(worldPos.xyz * 15.0); 
+        
+        // Use smoothstep with narrow range to create sharp "cliff" edges
+        // If noise < -0.2 -> Deep chip
+        // If noise > -0.2 -> Surface
+        float chip = smoothstep(-0.3, -0.2, chipNoise);
+        
+        // Apply flute displacement (masked by chips - chips cut into flutes)
         float fluteMask = smoothstep(0.0, 0.1, uv.y) * smoothstep(1.0, 0.9, uv.y);
         vec3 fluteDisp = normal * (flute * -uFluteDepth * isSide * fluteMask);
         
-        // Basic erosion displacement
-        float erosion = snoise(worldPos.xyz * 4.0 + vec3(0.0, uTime * 0.0, 0.0));
-        vec3 erosionDisp = normal * (erosion * 0.03 * uErosionStrength);
+        // Displacement: push INWARDS where chipped
+        // (1.0 - chip) is 1.0 in chipped areas
+        vec3 chipDisp = normal * (-(1.0 - chip) * 0.05 * uErosionStrength);
 
-        pos += fluteDisp + erosionDisp;
+        // Add large scale wobble for ancient warping
+        float wobble = snoise(worldPos.xyz * 2.0);
+        vec3 wobbleDisp = normal * (wobble * 0.02 * uErosionStrength);
+
+        pos += fluteDisp + chipDisp + wobbleDisp;
 
         vWorldPosition = (modelMatrix * vec4(pos, 1.0)).xyz;
-        vNoiseVal = noise; // Pass for fragment
+        vNoiseVal = chipNoise; // Pass for fragment to color chips darker
 
         gl_Position = projectionMatrix * viewMatrix * modelMatrix * vec4(pos, 1.0);
         vNormal = normalMatrix * normal;
@@ -152,7 +154,7 @@ const AncientColumnShaderMaterial = shaderMaterial(
     varying vec2 vUv;
     varying vec3 vNormal;
     varying vec3 vWorldPosition;
-    varying float vNoiseVal;
+    varying float vNoiseVal; // Chip noise
     varying float vHeight;
 
     uniform vec3 uColor;
@@ -162,14 +164,10 @@ const AncientColumnShaderMaterial = shaderMaterial(
     uniform float uTime;
     uniform float uErosionStrength;
 
-    // Reuse simplex noise or use a simple hash for grain
     float hash(vec2 p) {
         return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453);
     }
 
-    // 3D Noise function (borrow from vertex or simplified)
-    // For fragment, we'll try a simpler texture approach or re-implement noise if needed.
-    // Let's use value noise for efficiency.
     float vnoise(vec3 p) {
         vec3 i = floor(p);
         vec3 f = fract(p);
@@ -184,80 +182,54 @@ const AncientColumnShaderMaterial = shaderMaterial(
     void main() {
         vec3 normal = normalize(vNormal);
         vec3 viewDir = normalize(cameraPosition - vWorldPosition);
-        vec3 lightDir = normalize(vec3(-0.5, 0.4, -0.8)); // Main light
+        vec3 lightDir = normalize(vec3(-0.8, 0.4, -0.6)); // Match sun pos roughly
 
         // --- 1. Base Travertine Texture ---
-        // Layers of noise
-        float n1 = vnoise(vWorldPosition * 20.0); // Micro grain
-        float n2 = vnoise(vWorldPosition * 4.0);  // Macro blobs
-        float n3 = vnoise(vWorldPosition * 50.0); // Fine grit
+        float n1 = vnoise(vWorldPosition * 30.0); // Fine grain
+        float n2 = vnoise(vWorldPosition * 6.0);  // Macro variation
         
-        // Pitting/Pores characteristic of Travertine
-        // Dark spots where noise is low
-        float pores = smoothstep(0.3, 0.0, n1 * n2); 
+        // --- 2. Patina / Crevices ---
+        // Use vNoiseVal from vertex (chip depth)
+        // If vNoiseVal was low (chipped), we are deep -> darker/dirtier
+        // But also add high freq noise for surface patina
         
-        // Mineral Streaks (vertical-ish)
-        float streaks = vnoise(vWorldPosition * vec3(1.0, 15.0, 1.0));
+        float deepChip = 1.0 - smoothstep(-0.35, -0.15, vNoiseVal); // 1.0 inside chips
         
         vec3 albedo = uColor;
         
-        // Color variation based on noise
-        albedo = mix(albedo, uColor * 0.8, n2 * 0.5); // Darker patches
-        albedo = mix(albedo, uColor * 1.1, streaks * 0.2); // Light streaks
+        // Variation
+        albedo = mix(albedo, uColor * 0.9, n2);
         
-        // Apply pores (darken)
-        albedo = mix(albedo, uDecayColor, pores * 0.7); 
-
-        // --- 2. Wind Weathering ---
-        // Calculate alignment with wind direction
-        float windFactor = dot(normal, normalize(uWindDirection));
-        
-        // Windward side (windFactor > 0): Smoother, sand-blasted
-        // Leeward side (windFactor < 0): Rougher, more pitting
-        
-        float windWear = smoothstep(0.0, 1.0, windFactor);
-        
-        // Reduce pores on windward side (blasting effect)
-        // Also scale by global erosion strength (restored = fewer pores)
-        float finalPores = pores * (1.0 - windWear * 0.8) * uErosionStrength;
-        albedo = mix(uColor, uDecayColor, finalPores * 0.7); 
-
+        // Patina accumulation in chips & crevices
+        // Mix uDecayColor based on chip depth and some noise
+        float dirt = deepChip * 0.8 + (1.0 - n1) * 0.2;
+        albedo = mix(albedo, uDecayColor, dirt * uErosionStrength);
 
         // --- 3. Sand Accumulation ---
-        // 3a. Upward facing surfaces catch sand
+        // Upward facing planes
         float upFactor = max(dot(normal, vec3(0.0, 1.0, 0.0)), 0.0);
-        float sandAccumulation = smoothstep(0.6, 1.0, upFactor);
         
-        // 3b. Base burial (drifting sand at bottom)
-        // Check world Y relative to some base. 
-        // We can use vHeight (UV y) or world pos if passed. 
-        // Using vUv.y: 0 is bottom.
-        float baseSand = smoothstep(0.25, 0.0, vUv.y + vnoise(vWorldPosition*5.0)*0.1); // Noisy gradient at bottom
+        // Sand on top of chips/ledges
+        float ledgeSand = smoothstep(0.5, 0.9, upFactor) * step(0.1, deepChip); // Sand sitting in chips?
         
-        // 3c. Crevices (using noise deriv/value)
-        // Accumulate sand in deep noise pockets vs exposed areas
-        float creviceSand = smoothstep(0.4, 0.2, n2) * 0.6; // Sand in macro holes
+        // Base burial
+        float baseSand = smoothstep(0.2, 0.0, vUv.y);
         
-        float totalSand = max(sandAccumulation, baseSand);
-        totalSand = max(totalSand, creviceSand * (1.0 - windWear)); // Less sand on windward side crevices
+        float totalSand = max(ledgeSand, baseSand);
+        albedo = mix(albedo, uSandColor, totalSand * 0.9);
 
-        albedo = mix(albedo, uSandColor, totalSand); 
-        
         // --- 4. Lighting ---
         float diff = max(dot(normal, lightDir), 0.0);
         
-        // Specular - very dull for stone, slightly shiner for wind-polished areas or if restored
-        float roughBase = 0.9 - (windWear * 0.3);
-        float roughness = mix(0.4, roughBase, uErosionStrength); // 0.4 roughness if fully restored (smoother)
+        // Specular is low for stone
+        float roughness = 0.95;
         vec3 reflectDir = reflect(-lightDir, normal);
-        float spec = pow(max(dot(viewDir, reflectDir), 0.0), 16.0) * (1.0 - roughness);
+        float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32.0) * (1.0 - roughness);
         
-        vec3 ambient = vec3(0.35) * albedo;
-        vec3 diffuse = diff * albedo * vec3(1.0, 0.95, 0.8); // Warm sun light
+        vec3 ambient = vec3(0.4) * albedo; // Blue-ish tint from env ideally, here just dim
+        vec3 diffuse = diff * albedo * vec3(1.0, 0.95, 0.85);
         
-        vec3 finalColor = ambient + diffuse + vec3(spec * 0.2);
-
-        gl_FragColor = vec4(finalColor, 1.0);
+        gl_FragColor = vec4(ambient + diffuse + vec3(spec), 1.0);
         
         #include <fog_fragment>
     }

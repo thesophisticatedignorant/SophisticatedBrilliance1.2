@@ -67,6 +67,7 @@ export function CameraRig() {
                 maxDistance={60}
                 enableDamping={true}
                 dampingFactor={0.05}
+                maxPolarAngle={Math.PI / 2 - 0.1} // Clamp to just above horizon to prevent seeing under the world
             />
         </>
     )

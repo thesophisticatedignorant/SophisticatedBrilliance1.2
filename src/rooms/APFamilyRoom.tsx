@@ -1,6 +1,5 @@
 import { useRef } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
-import { Text } from '@react-three/drei'
 import * as THREE from 'three'
 import { WatchModel } from '../components/WatchModel'
 import { useStore } from '../store/useStore'
@@ -8,6 +7,7 @@ import { easing } from 'maath'
 import { ASSETS } from '../config/assets'
 import { DesertLandscape } from '../environment/DesertLandscape'
 import { AncientColumnMaterial } from '../materials/AncientColumnMaterial'
+import { CentralPlinth } from '../components/canvas/CentralPlinth'
 
 
 
@@ -155,44 +155,7 @@ export function APFamilyRoom() {
 
             {/* Floating Columns & Assets */}
             {/* RESTORED PLINTH - Replaces Ancient Roman Platform */}
-            <group position={[0, -0.2, 0]}>
-                {/* Base Cylinder (Smooth, clean limestone) */}
-                <mesh receiveShadow castShadow position={[0, 0.25, 0]}>
-                    <cylinderGeometry args={[8, 8.2, 0.5, 128, 1]} />
-                    <AncientColumnMaterial
-                        uColor={new THREE.Color("#dccca3")}
-                        uErosionStrength={0.2} // Low erosion = Preserved
-                        fluteFreq={0.0} // No flutes
-                        uEntasisStrength={0.05} // Subtle swelling
-                    />
-                </mesh>
-
-                {/* Main Plinth Surface */}
-                <mesh receiveShadow castShadow position={[0, 0.6, 0]}>
-                    <cylinderGeometry args={[7.8, 7.8, 0.2, 128, 1]} />
-                    <AncientColumnMaterial
-                        uColor={new THREE.Color("#e0d0b0")}
-                        uErosionStrength={0.1} // Very preserved
-                        fluteFreq={0.0}
-                    />
-                </mesh>
-
-                {/* Carved Ring Detail (Darker inset look) */}
-                <mesh position={[0, 0.71, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-                    <ringGeometry args={[6.0, 6.3, 128]} />
-                    <AncientColumnMaterial
-                        uColor={new THREE.Color("#b8aa8a")}
-                        uErosionStrength={0.1}
-                        uDecayColor={new THREE.Color("#8f846a")}
-                    />
-                </mesh>
-
-                {/* Sand Drift - Partial Encirclement */}
-                <mesh position={[1.0, -0.1, 1.0]} rotation={[-Math.PI / 2, 0, -Math.PI / 4]} scale={[1, 1, 0.3]} receiveShadow>
-                    <torusGeometry args={[9.0, 2.5, 16, 64, 3.5]} />
-                    <meshStandardMaterial color="#e6a65c" roughness={1.0} />
-                </mesh>
-            </group>
+            <CentralPlinth position={[0, -0.4, 0]} />
 
             {/* Floating Columns & Assets */}
             {ASSETS.map((asset) => {
@@ -233,34 +196,7 @@ export function APFamilyRoom() {
             })
             }
 
-            {/* Typography */}
-            <group position={[-15, 12, -20]} rotation={[0, 0.2, 0]}>
-                <Text
-                    position={[0, 2, 0]}
-                    fontSize={2.5}
-                    font="https://fonts.gstatic.com/s/inter/v12/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuLyfAZ9hjp-Ek-_EeA.woff"
-                    color="#ffffff"
-                    anchorX="left"
-                    anchorY="bottom"
-                    maxWidth={20}
-                    lineHeight={1}
-                    letterSpacing={0.1}
-                >
-                    TRANSCENDENCE OF MAN
-                </Text>
-                <Text
-                    position={[0, 0, 0]}
-                    fontSize={0.8}
-                    font="https://fonts.gstatic.com/s/inter/v12/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuLyfAZ9hjp-Ek-_EeA.woff"
-                    color="#eee"
-                    anchorX="left"
-                    anchorY="top"
-                    maxWidth={20}
-                    letterSpacing={0.2}
-                >
-                    HOUSE OF WONDERS
-                </Text>
-            </group>
+            {/* Typography Removed - Handled by UI Overlay now */}
         </group >
     )
 }
